@@ -53,6 +53,12 @@ public class MorseDecoder {
 
         double[] sampleBuffer = new double[BIN_SIZE * inputFile.getNumChannels()];
         for (int binIndex = 0; binIndex < totalBinCount; binIndex++) {
+            inputFile.readFrames(sampleBuffer, BIN_SIZE);
+            for (int i = 0; i < sampleBuffer.length; i++) {
+                //System.out.println(sampleBuffer[i]);
+                returnBuffer[binIndex] = returnBuffer[binIndex]
+                        + sampleBuffer[i];
+            }
             // Get the right number of samples from the inputFile
             // Sum all the samples together and store them in the returnBuffer
         }
@@ -77,15 +83,46 @@ public class MorseDecoder {
      * @return the Morse code string of dots, dashes, and spaces
      */
     private static String powerToDotDash(final double[] powerMeasurements) {
-        /*
-         * There are four conditions to handle. Symbols should only be output when you see
-         * transitions. You will also have to store how much power or silence you have seen.
-         */
+        int power = 0;
+        int silence = 0;
+        String returnDDS = " ";
+        for (int i = 0; i < powerMeasurements.length; i++) {
+            if (i == 0) {
+                if (powerMeasurements[0] > POWER_THRESHOLD) {
+                    power++;
+                } else {
+                    power = 0;
+                }
+            } else if (Math.abs(powerMeasurements[i]) > POWER_THRESHOLD
+                    && Math.abs(powerMeasurements[i - 1]) > POWER_THRESHOLD) {
+                power++;
+                if (power == DASH_BIN_COUNT) {
+                    returnDDS += "-";
+                    System.out.print("-");
+                    power = 0;
+                }
 
-        // if ispower and waspower
-        // else if ispower and not waspower
-        // else if issilence and wassilence
-        // else if issilence and not wassilence
+            } else if (Math.abs(powerMeasurements[i]) > POWER_THRESHOLD
+                    && Math.abs(powerMeasurements[i - 1]) < POWER_THRESHOLD){
+                power++;
+            } else if (Math.abs(powerMeasurements[i]) < POWER_THRESHOLD
+                    && Math.abs(powerMeasurements[i - 1]) < POWER_THRESHOLD){
+                returnDDS += " ";
+                System.out.print(" ");
+
+            } else if (Math.abs(powerMeasurements[i]) < POWER_THRESHOLD
+                    && Math.abs(powerMeasurements[i - 1]) > POWER_THRESHOLD){
+                if (power < DASH_BIN_COUNT) {
+                    returnDDS += ".";
+                    System.out.print(".");
+                }
+                power = 0;
+            }
+
+        }
+
+        System.out.println(returnDDS);
+
 
         return "";
     }
